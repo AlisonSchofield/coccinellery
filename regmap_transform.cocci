@@ -91,10 +91,10 @@ expression e;
   probefn (struct x *y, ...) {
   ...
 - i->d = e;
-  <+...
+  <...
 -	   i->d    
 +	&y->dev
-  ...+>
+  ...>
   }
 
 @ remains depends on b exists @
