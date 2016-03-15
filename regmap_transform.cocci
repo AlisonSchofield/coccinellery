@@ -2,26 +2,29 @@
 //	This semantic patch finds drivers that have struct regmap
 //	AND struct device in their global data struct.  The struct
 //	device can be deleted and regmap used to access same info.
-//	Transform all dev_err usages and print warning of others.
+//	Transform all usages and print warning of others.
 //
 //	Method:
 //	find devices global data structure
 //	if regmap exists AND device struct *still* exists
 //		remove the device struct
 //
-//	find functions using device struct for dev_err()
+//	find funcs accessing struct device thru their global data struct
+//		(drvdata == global data struct)
 //	Handle 3 Cases:
 //
 //		passed: drvdata passed as param to function
 //              insert a local device struct obtained from regmap
-//              modify dev_err calls to use local device struct
+//              use that local device struct instead of drvdata
 //
 //		derived: drvdata derived within function
 //              insert a local device struct obtained from regmap
-//              modify dev_err calls to use local dev struct
+//              use that local device struct instead of drvdata
 //
 //		probe: it's the probe function
-//		use the {i2c|spi|platform_device}->dev for dev_err()
+//		use the {i2c|spi|platform_device} function parameter
+//		for device struct. 
+//		delete attempt to store device struct in drvdata
 //
 //	Sweep:  print a warning message on any remaining dereferences
 //		of the global struct device field. (drvdata->d)
@@ -47,26 +50,18 @@ position a.p;
   };
 
 @ passed depends on b @
-expression list args;
 identifier a.drvdata, a.r, b.d, i, f;
 @@
   f (..., struct drvdata *i ,...) {
 + struct device *dev = regmap_get_device(i->r);
    <+...
-(	dev_err
-|	dev_dbg
-|	dev_info
-|	dev_warn
-)	       (
 -	   i->d
 +	   dev
-	  ,args)
    ...+>
   }
 
 @ derived depends on b @
 expression e;
-expression list args;
 identifier a.drvdata, a.r, b.d, x, f;
 @@
   f (...) {
@@ -74,14 +69,8 @@ identifier a.drvdata, a.r, b.d, x, f;
   struct drvdata *x = e;
 + struct device *dev = regmap_get_device(x->r);
   <+...
-(	dev_err
-|	dev_dbg
-|	dev_info
-|	dev_warn
-)	       (
 -	   x->d
 +	    dev
-	  ,args)
   ...+>
   }
 
@@ -95,23 +84,16 @@ identifier s, probefn;
 
 @ case_probe depends on getprobefn && b @
 identifier getprobefn.probefn;
-identifier a.drvdata,b.d,x,y,z;
+identifier a.drvdata,b.d,x,y;
 struct drvdata *i;
-expression list args;
 expression e;
 @@
   probefn (struct x *y, ...) {
   ...
 - i->d = e;
   <+...
-(	dev_err
-|	dev_dbg
-|	dev_info
-|	dev_warn
-)	       (
--	   z->d    
+-	   i->d    
 +	&y->dev
-	  ,args)
   ...+>
   }
 
