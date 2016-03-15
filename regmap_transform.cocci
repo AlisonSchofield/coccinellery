@@ -53,7 +53,11 @@ identifier a.drvdata, a.r, b.d, i, f;
   f (..., struct drvdata *i ,...) {
 + struct device *dev = regmap_get_device(i->r);
    <+...
-        dev_err(
+(	dev_err
+|	dev_dbg
+|	dev_info
+|	dev_warn
+)	       (
 -	   i->d
 +	   dev
 	  ,args)
@@ -69,8 +73,12 @@ identifier a.drvdata, a.r, b.d, x, f;
   ...
   struct drvdata *x = e;
 + struct device *dev = regmap_get_device(x->r);
-  <+... 
-	dev_err(
+  <+...
+(	dev_err
+|	dev_dbg
+|	dev_info
+|	dev_warn
+)	       (
 -	   x->d
 +	    dev
 	  ,args)
@@ -96,7 +104,11 @@ expression e;
   ...
 - i->d = e;
   <+...
-	dev_err(
+(	dev_err
+|	dev_dbg
+|	dev_info
+|	dev_warn
+)	       (
 -	   z->d    
 +	&y->dev
 	  ,args)
