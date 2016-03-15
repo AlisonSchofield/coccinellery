@@ -87,10 +87,14 @@ identifier s, probefn;
 
 @ case_probe depends on getprobefn && b @
 identifier getprobefn.probefn;
+identifier a.drvdata,b.d,x,y,z;
+struct drvdata *i;
 expression list args;
-identifier b.d,x,y,z;
+expression e;
 @@
   probefn (struct x *y, ...) {
+  ...
+- i->d = e;
   <+...
 	dev_err(
 -	   z->d    
